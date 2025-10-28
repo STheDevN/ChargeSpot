@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test - EV Charging Station Finder</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Connection Test</h1>
+    
+    <div>
+        <button onclick="testBackendHealth()">Test Backend Health</button>
+        <button onclick="testDemoStations()">Test Demo Stations</button>
+        <button onclick="testOCMAPI()">Test OCM API</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        async function testBackendHealth() {
+            addResult('Testing Backend Health...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Backend Health Check: SUCCESS', 'success');
+                    addResult(`Response: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    addResult(`❌ Backend Health Check: FAILED (${response.status})`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Backend Health Check: ERROR - ${error.message}`, 'error');
+                addResult('💡 Make sure backend is running on port 5000', 'info');
+            }
+        }
+
+        async function testDemoStations() {
+            addResult('Testing Demo Stations API...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/demo/stations');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Demo Stations API: SUCCESS', 'success');
+                    addResult(`Found ${data.stations ? data.stations.length : 0} demo stations`, 'success');
+                    addResult(`Response: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    addResult(`❌ Demo Stations API: FAILED (${response.status})`, 'error');
+                    addResult(`Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Demo Stations API: ERROR - ${error.message}`, 'error');
+            }
+        }
+
+        async function testOCMAPI() {
+            addResult('Testing Open Charge Map API...', 'info');
+            
+            try {
+                const ocmUrl = 'https://api.openchargemap.io/v3/poi?output=json&latitude=18.5204&longitude=73.8567&distance=25&maxresults=5&compact=true';
+                const response = await fetch(ocmUrl);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('✅ Open Charge Map API: SUCCESS', 'success');
+                    addResult(`Found ${data.length} live stations near Pune`, 'success');
+                    addResult(`Sample station: ${data[0] ? data[0].AddressInfo?.Title : 'None'}`, 'info');
+                } else {
+                    addResult(`❌ Open Charge Map API: FAILED (${response.status})`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Open Charge Map API: ERROR - ${error.message}`, 'error');
+            }
+        }
+
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            
+            if (type === 'info' && message.includes('{')) {
+                div.innerHTML = `<pre>${message}</pre>`;
+            } else {
+                div.textContent = message;
+            }
+            
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-run basic tests on load
+        window.onload = function() {
+            addResult('🚀 API Test Suite Loaded', 'info');
+            addResult('Click buttons above to test different APIs', 'info');
+        };
+    </script>
+</body>
+</html>

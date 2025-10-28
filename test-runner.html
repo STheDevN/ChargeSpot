@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EV Charging Station Finder - Test Runner</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .fail { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .summary { background-color: #e2e3e5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #results { margin-top: 20px; }
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>🚀 EV Charging Station Finder - Test Suite</h1>
+    <p>Comprehensive testing based on TestSprite requirements</p>
+    
+    <div>
+        <button onclick="runTests()">Run All Tests</button>
+        <button onclick="testMapOnly()">Test Map Only</button>
+        <button onclick="testAPIOnly()">Test API Only</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="status" class="loading" style="display: none;">Running tests...</div>
+    <div id="results"></div>
+
+    <script src="comprehensive-test-suite.js"></script>
+    <script>
+        let testSuite = new TestSuite();
+        
+        async function runTests() {
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            testSuite = new TestSuite();
+            await testSuite.runAllTests();
+            displayResults(testSuite.results);
+            
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        async function testMapOnly() {
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            testSuite = new TestSuite();
+            await testSuite.testFrontendMap();
+            await testSuite.testOCMIntegration();
+            displayResults(testSuite.results);
+            
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        async function testAPIOnly() {
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            testSuite = new TestSuite();
+            await testSuite.testSearchStations();
+            await testSuite.testGetRentalUnits();
+            await testSuite.testDemoOwnerLogin();
+            displayResults(testSuite.results);
+            
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            
+            const passed = results.filter(r => r.passed).length;
+            const total = results.length;
+            const passRate = ((passed / total) * 100).toFixed(1);
+            
+            resultsDiv.innerHTML = `
+                <div class="summary">
+                    <h3>📊 Test Summary</h3>
+                    <p><strong>Total Tests:</strong> ${total}</p>
+                    <p><strong>Passed:</strong> ${passed} ✅</p>
+                    <p><strong>Failed:</strong> ${total - passed} ❌</p>
+                    <p><strong>Pass Rate:</strong> ${passRate}%</p>
+                </div>
+            `;
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    <strong>${result.passed ? '✅' : '❌'} ${result.id}:</strong> ${result.title}<br>
+                    <small>${result.details}</small>
+                `;
+                resultsDiv.appendChild(div);
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('status').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

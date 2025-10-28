@@ -1,0 +1,28 @@
+---
+/*
+main entry point for your entire website. It acts as a host or a shell that loads and runs your entire React application in the browser.
+
+  APPLICATION FLOW:
+  1. A user requests a page.
+  2. The server uses this .astro file to handle the request because it's a catch-all route.
+  3. Astro builds a minimal HTML shell, including global CSS and <head> content.
+  4. This HTML and the JavaScript for the React app are sent to the browser.
+  5. In the browser, React takes over the <div id="root"> and starts the <AppRouter />.
+  6. From then on, react-router-dom handles all navigation, creating the SPA experience.
+*/
+import { Head } from "../component/Head.jsx";
+import AppRouter from "../component/Router.jsx";
+import "../styles/global.css";
+import "../styles/fonts.css";
+---
+
+<html lang="en" class="w-full h-full dark">
+  <head>
+    <Head />
+  </head>
+  <body class="w-full h-full">
+    <div id="root" class="w-full h-full">
+      <AppRouter client:only="react" />
+    </div>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "wixstro",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "dev:frontend": "astro dev",
+    "dev:backend": "node backend/index.js"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.2.3",
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^5.8.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^7.4.1",
+    "tailwindcss": "^3.4.14",
+    "lucide-react": "^0.487.0",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.8.3",
+    "vite": "^4.5.0"
+  }
+}

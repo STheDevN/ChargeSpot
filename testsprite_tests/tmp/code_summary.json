@@ -1,0 +1,607 @@
+{
+  "tech_stack": [
+    "JavaScript",
+    "Node.js",
+    "Express.js",
+    "React",
+    "Astro",
+    "MongoDB",
+    "Mongoose",
+    "Socket.io",
+    "Stripe",
+    "Tailwind CSS",
+    "Leaflet Maps",
+    "JWT Authentication",
+    "bcryptjs",
+    "Google Maps API",
+    "Open Charge Map API"
+  ],
+  "features": [
+    {
+      "name": "User Authentication API",
+      "description": "Handles user registration, login, logout, and profile management with JWT token authentication",
+      "files": [
+        "backend/routes/auth.js",
+        "backend/models/User.js",
+        "backend/middleware/auth.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "User Authentication API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/auth/register": {
+            "post": {
+              "summary": "Register a new user",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "email": {"type": "string", "format": "email"},
+                        "password": {"type": "string", "minLength": 6},
+                        "firstName": {"type": "string"},
+                        "lastName": {"type": "string"},
+                        "phone": {"type": "string"},
+                        "role": {"type": "string", "enum": ["user", "owner", "admin"]}
+                      },
+                      "required": ["email", "password", "firstName", "lastName"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "201": {
+                  "description": "User registered successfully",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "message": {"type": "string"},
+                          "token": {"type": "string"},
+                          "user": {"$ref": "#/components/schemas/User"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/auth/login": {
+            "post": {
+              "summary": "Login user",
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "email": {"type": "string", "format": "email"},
+                        "password": {"type": "string"}
+                      },
+                      "required": ["email", "password"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Login successful",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "message": {"type": "string"},
+                          "token": {"type": "string"},
+                          "user": {"$ref": "#/components/schemas/User"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Charging Stations API",
+      "description": "Manages charging station data, search, filtering, and station details with geospatial queries",
+      "files": [
+        "backend/routes/stations.js",
+        "backend/models/ChargingStation.js",
+        "backend/services/googleMaps.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Charging Stations API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/stations": {
+            "get": {
+              "summary": "Get all charging stations with filters",
+              "parameters": [
+                {"name": "city", "in": "query", "schema": {"type": "string"}},
+                {"name": "stationType", "in": "query", "schema": {"type": "string"}},
+                {"name": "connectorType", "in": "query", "schema": {"type": "string"}},
+                {"name": "minSpeed", "in": "query", "schema": {"type": "integer"}},
+                {"name": "maxPrice", "in": "query", "schema": {"type": "number"}},
+                {"name": "lat", "in": "query", "schema": {"type": "number"}},
+                {"name": "lng", "in": "query", "schema": {"type": "number"}},
+                {"name": "radius", "in": "query", "schema": {"type": "number", "default": 10}},
+                {"name": "page", "in": "query", "schema": {"type": "integer", "default": 1}},
+                {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}}
+              ],
+              "responses": {
+                "200": {
+                  "description": "List of charging stations",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "stations": {
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/ChargingStation"}
+                          },
+                          "total": {"type": "integer"},
+                          "page": {"type": "integer"},
+                          "pages": {"type": "integer"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/stations/{id}": {
+            "get": {
+              "summary": "Get specific charging station details",
+              "parameters": [
+                {"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}
+              ],
+              "responses": {
+                "200": {
+                  "description": "Charging station details",
+                  "content": {
+                    "application/json": {
+                      "schema": {"$ref": "#/components/schemas/ChargingStation"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Booking System API",
+      "description": "Handles charging slot bookings, time slot management, and booking status updates",
+      "files": [
+        "backend/routes/bookings.js",
+        "backend/models/Booking.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Booking System API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/bookings": {
+            "post": {
+              "summary": "Create a new booking",
+              "security": [{"bearerAuth": []}],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "stationId": {"type": "string"},
+                        "chargerId": {"type": "string"},
+                        "startTime": {"type": "string", "format": "date-time"},
+                        "endTime": {"type": "string", "format": "date-time"},
+                        "vehicleType": {"type": "string"},
+                        "notes": {"type": "string"}
+                      },
+                      "required": ["stationId", "chargerId", "startTime", "endTime"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "201": {
+                  "description": "Booking created successfully",
+                  "content": {
+                    "application/json": {
+                      "schema": {"$ref": "#/components/schemas/Booking"}
+                    }
+                  }
+                }
+              }
+            },
+            "get": {
+              "summary": "Get user's bookings",
+              "security": [{"bearerAuth": []}],
+              "responses": {
+                "200": {
+                  "description": "List of user bookings",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/Booking"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Rental System API",
+      "description": "Manages charging unit rentals for home use with rental requests and approval workflow",
+      "files": [
+        "backend/routes/rentals.js",
+        "backend/models/Rental.js",
+        "backend/models/RentalUnit.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Rental System API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/rentals": {
+            "get": {
+              "summary": "Get available rental units",
+              "responses": {
+                "200": {
+                  "description": "List of rental units",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/RentalUnit"}
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "post": {
+              "summary": "Create rental request",
+              "security": [{"bearerAuth": []}],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "rentalUnitId": {"type": "string"},
+                        "startDate": {"type": "string", "format": "date"},
+                        "endDate": {"type": "string", "format": "date"},
+                        "deliveryAddress": {"type": "string"},
+                        "notes": {"type": "string"}
+                      },
+                      "required": ["rentalUnitId", "startDate", "endDate", "deliveryAddress"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "201": {
+                  "description": "Rental request created",
+                  "content": {
+                    "application/json": {
+                      "schema": {"$ref": "#/components/schemas/Rental"}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Review System API",
+      "description": "Handles station reviews, ratings, and review moderation",
+      "files": [
+        "backend/routes/reviews.js",
+        "backend/models/Review.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Review System API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/reviews": {
+            "post": {
+              "summary": "Create a review",
+              "security": [{"bearerAuth": []}],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "stationId": {"type": "string"},
+                        "rating": {"type": "integer", "minimum": 1, "maximum": 5},
+                        "comment": {"type": "string"},
+                        "title": {"type": "string"}
+                      },
+                      "required": ["stationId", "rating"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "201": {
+                  "description": "Review created successfully",
+                  "content": {
+                    "application/json": {
+                      "schema": {"$ref": "#/components/schemas/Review"}
+                    }
+                  }
+                }
+              }
+            },
+            "get": {
+              "summary": "Get reviews for a station",
+              "parameters": [
+                {"name": "stationId", "in": "query", "required": true, "schema": {"type": "string"}}
+              ],
+              "responses": {
+                "200": {
+                  "description": "List of reviews",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/Review"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Payment Gateway API",
+      "description": "Integrates with Stripe for secure payment processing for bookings and rentals",
+      "files": [
+        "backend/routes/payments.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Payment Gateway API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/payments/create-payment-intent": {
+            "post": {
+              "summary": "Create payment intent",
+              "security": [{"bearerAuth": []}],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {"type": "number"},
+                        "currency": {"type": "string", "default": "usd"},
+                        "bookingId": {"type": "string"},
+                        "rentalId": {"type": "string"}
+                      },
+                      "required": ["amount"]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Payment intent created",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "clientSecret": {"type": "string"},
+                          "paymentIntentId": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Admin Dashboard API",
+      "description": "Provides admin functionality for user management, station approval, and analytics",
+      "files": [
+        "backend/routes/admin.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Admin Dashboard API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/admin/users": {
+            "get": {
+              "summary": "Get all users",
+              "security": [{"bearerAuth": []}],
+              "responses": {
+                "200": {
+                  "description": "List of users",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/User"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/admin/stations": {
+            "get": {
+              "summary": "Get all stations for admin review",
+              "security": [{"bearerAuth": []}],
+              "responses": {
+                "200": {
+                  "description": "List of stations pending approval",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/ChargingStation"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/api/admin/analytics": {
+            "get": {
+              "summary": "Get analytics data",
+              "security": [{"bearerAuth": []}],
+              "responses": {
+                "200": {
+                  "description": "Analytics data",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "totalUsers": {"type": "integer"},
+                          "totalStations": {"type": "integer"},
+                          "totalBookings": {"type": "integer"},
+                          "totalRevenue": {"type": "number"},
+                          "monthlyStats": {"type": "object"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Maps Integration API",
+      "description": "Integrates with Google Maps and Open Charge Map APIs for enhanced mapping features",
+      "files": [
+        "backend/routes/maps.js",
+        "backend/services/googleMaps.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Maps Integration API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/maps/nearby": {
+            "get": {
+              "summary": "Find nearby charging stations",
+              "parameters": [
+                {"name": "lat", "in": "query", "required": true, "schema": {"type": "number"}},
+                {"name": "lng", "in": "query", "required": true, "schema": {"type": "number"}},
+                {"name": "radius", "in": "query", "schema": {"type": "number", "default": 10}}
+              ],
+              "responses": {
+                "200": {
+                  "description": "Nearby charging stations",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/ChargingStation"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Demo Data API",
+      "description": "Provides demo stations and data for testing and demonstration purposes",
+      "files": [
+        "backend/routes/demo.js",
+        "backend/scripts/create-pune-demo-stations.js"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Demo Data API",
+          "version": "1.0.0"
+        },
+        "paths": {
+          "/api/demo/stations": {
+            "get": {
+              "summary": "Get demo charging stations",
+              "responses": {
+                "200": {
+                  "description": "List of demo stations",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/ChargingStation"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+
