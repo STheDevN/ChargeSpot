@@ -31,3 +31,7 @@ npm-debug.log*
 # Cache
 .cache/
 .temp/
+
+**/*.md
+!README.md
+!CONTRIBUTING.md

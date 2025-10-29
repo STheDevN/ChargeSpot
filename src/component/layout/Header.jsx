@@ -45,15 +45,27 @@ export default function Header() {
 
             <div className="flex items-center gap-4">
               {/* Navigation links */}
-              <Link to="/stations" className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors">
+              <Link 
+                to="/stations" 
+                className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors"
+                onClick={() => console.log('Stations link clicked')}
+              >
                 <MapPin className="w-4 h-4" />
                 Find Stations
               </Link>
-              <Link to="/about" className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors">
+              <Link 
+                to="/about" 
+                className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors"
+                onClick={() => console.log('About link clicked')}
+              >
                 <Info className="w-4 h-4" />
                 About Us
               </Link>
-              <Link to="/contact" className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors">
+              <Link 
+                to="/contact" 
+                className="flex items-center gap-1 font-paragraph text-secondary hover:text-primary transition-colors"
+                onClick={() => console.log('Contact link clicked')}
+              >
                 <Phone className="w-4 h-4" />
                 Contact
               </Link>
@@ -92,7 +104,10 @@ export default function Header() {
               
               {!isAuthenticated && !isLoading && (
                 <Button 
-                  onClick={() => setShowAuthModal(true)} 
+                  onClick={() => {
+                    console.log('Sign In button clicked');
+                    setShowAuthModal(true);
+                  }} 
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Sign In

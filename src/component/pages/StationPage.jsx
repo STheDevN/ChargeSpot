@@ -109,8 +109,12 @@ export default function StationsPage() {
       const matchesStationType = !selectedStationType || station.stationType === selectedStationType;
 
       // Connector type filter
-      const matchesConnectorType = !selectedConnectorType || 
-        station.connectorTypes?.includes(selectedConnectorType);
+      const matchesConnectorType = !selectedConnectorType || (() => {
+        if (!station.connectorTypes) return false;
+        if (Array.isArray(station.connectorTypes)) return station.connectorTypes.includes(selectedConnectorType);
+        if (typeof station.connectorTypes === 'string') return station.connectorTypes.split(',').map(c => c.trim()).includes(selectedConnectorType);
+        return false;
+      })();
 
       // Charging speed filter
       const matchesChargingSpeed = !minChargingSpeed || 
@@ -146,7 +150,12 @@ export default function StationsPage() {
   };
 
   const uniqueStationTypes = [...new Set(stations.map(s => s.stationType).filter(Boolean))];
-  const uniqueConnectorTypes = [...new Set(stations.flatMap(s => s.connectorTypes?.split(',') || []).map(c => c.trim()).filter(Boolean))];
+  const uniqueConnectorTypes = [...new Set(stations.flatMap(s => {
+    if (!s.connectorTypes) return [];
+    if (Array.isArray(s.connectorTypes)) return s.connectorTypes;
+    if (typeof s.connectorTypes === 'string') return s.connectorTypes.split(',').map(c => c.trim());
+    return [];
+  }).filter(Boolean))];
 
   return (
     <div className="min-h-screen bg-background">
@@ -420,11 +429,19 @@ export default function StationsPage() {
 
                     {station.connectorTypes && (
                       <div className="flex flex-wrap gap-1">
-                        {station.connectorTypes.split(',').map((type, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {type.trim()}
-                          </Badge>
-                        ))}
+                        {(() => {
+                          let types = [];
+                          if (Array.isArray(station.connectorTypes)) {
+                            types = station.connectorTypes;
+                          } else if (typeof station.connectorTypes === 'string') {
+                            types = station.connectorTypes.split(',').map(c => c.trim());
+                          }
+                          return types.map((type, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {type}
+                            </Badge>
+                          ));
+                        })()}
                       </div>
                     )}
 

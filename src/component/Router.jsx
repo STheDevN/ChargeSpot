@@ -9,6 +9,8 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import BookingsPage from './pages/BookingsPage.jsx';
 import ContactPage from './pages/ContactPage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
+import PrivacyPage from './pages/PrivacyPage.jsx';
+import TermsPage from './pages/TermsPage.jsx';
 import OwnerDashboardPage from './pages/OwnerDashboardPage.jsx';
 import OwnerStationManagePage from './pages/OwnerStationManagePage.jsx';
 import OwnerAnalyticsPage from './pages/OwnerAnalyticsPage.jsx';
@@ -74,6 +76,14 @@ const router = createBrowserRouter([
       {
         path: "about",
         element: <AboutPage />,
+      },
+      {
+        path: "privacy",
+        element: <PrivacyPage />,
+      },
+      {
+        path: "terms",
+        element: <TermsPage />,
       },
       {
         path: "owner/dashboard",

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BaseCrudService } from '../../integrations/crud-service.js';
+import { useMember } from '../../integrations/index.js';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -30,6 +31,7 @@ import {
 
 export default function StationManagementPage() {
   const navigate = useNavigate();
+  const { member, isAuthenticated } = useMember();
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -123,6 +125,14 @@ export default function StationManagementPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Debug: Check authentication status
+      const token = localStorage.getItem('authToken');
+      console.log('Auth token exists:', !!token);
+      console.log('Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
+      console.log('Is authenticated:', isAuthenticated);
+      console.log('Current user:', member);
+      console.log('User role:', member?.role);
+      
       const stationData = {
         ...formData,
         coordinates: {
@@ -133,6 +143,8 @@ export default function StationManagementPage() {
         chargingSpeedKw: parseFloat(formData.chargingSpeedKw),
         pricePerKwh: parseFloat(formData.pricePerKwh)
       };
+      
+      console.log('Station data being sent:', stationData);
 
       if (editingStation) {
         await BaseCrudService.updateStation({ ...stationData, _id: editingStation._id });
@@ -146,6 +158,20 @@ export default function StationManagementPage() {
       fetchStations();
     } catch (error) {
       console.error('Error saving station:', error);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to save station. ';
+      if (error.message.includes('403')) {
+        errorMessage += 'You need to be logged in as a station owner to create stations.';
+      } else if (error.message.includes('500')) {
+        errorMessage += 'Server error. Please check if the backend is running and try again.';
+      } else if (error.message.includes('401')) {
+        errorMessage += 'Please log in to create stations.';
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
     }
   };
 

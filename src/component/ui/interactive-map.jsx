@@ -8,6 +8,47 @@ import { Button } from '../ui/button';
 import { MapPin, Zap, Clock, Star, Navigation } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
+// Error Boundary for Map Component
+class MapErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Map Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-center p-8">
+            <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">Map Error</h3>
+            <p className="text-gray-500 mb-4">Something went wrong with the map component.</p>
+            <Button 
+              onClick={() => {
+                this.setState({ hasError: false });
+                window.location.reload();
+              }}
+              variant="outline"
+            >
+              Reload Page
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -60,6 +101,7 @@ export default function InteractiveMap({
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState(center);
   const [loading, setLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
   const mapRef = useRef();
 
   // Filter states
@@ -133,7 +175,8 @@ export default function InteractiveMap({
   const uniqueStationTypes = [...new Set(stations.map(s => s.stationType).filter(Boolean))];
 
   return (
-    <div className="w-full">
+    <MapErrorBoundary>
+      <div className="w-full">
       {showFilters && (
         <Card className="mb-4">
           <CardContent className="p-4">
@@ -195,110 +238,143 @@ export default function InteractiveMap({
       )}
 
       <div className="relative" style={{ height }}>
-        <MapContainer
-          center={mapCenter}
-          zoom={zoom}
-          style={{ height: '100%', width: '100%' }}
-          ref={mapRef}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          
-          <MapUpdater center={mapCenter} zoom={zoom} />
-          
-          {/* User location marker */}
-          {userLocation && (
-            <Marker position={userLocation} icon={createCustomIcon('#3b82f6')}>
-              <Popup>
-                <div className="text-center">
-                  <p className="font-semibold">Your Location</p>
-                </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Station markers */}
-          {filteredStations.map((station) => (
-            <Marker
-              key={station._id}
-              position={[station.coordinates?.latitude || station.latitude, station.coordinates?.longitude || station.longitude]}
-              icon={getStationIcon(station)}
-              eventHandlers={{
-                click: () => handleStationClick(station)
-              }}
-            >
-              <Popup>
-                <div className="min-w-[250px]">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-lg">{station.name || station.stationName}</h3>
-                      <Badge className={`${
-                        station.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {station.isAvailable ? 'Available' : 'Occupied'}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {station.address}
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-blue-500" />
-                        <span>{station.chargingSpeedKw}kW</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold">${station.pricePerKwh}/kWh</span>
-                      </div>
-                    </div>
-
-                    {station.operatingHours && (
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Clock className="w-3 h-3" />
-                        <span>{station.operatingHours}</span>
-                      </div>
-                    )}
-
-                    {station.rating && (
-                      <div className="flex items-center gap-1 text-sm">
-                        <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                        <span>{station.rating.average?.toFixed(1) || 'N/A'}</span>
-                        <span className="text-gray-500">({station.rating.count || 0} reviews)</span>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleStationClick(station)}
-                      >
-                        View Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => {
-                          const lat = station.coordinates?.latitude || station.latitude;
-                          const lng = station.coordinates?.longitude || station.longitude;
-                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-                        }}
-                      >
-                        <Navigation className="w-3 h-3" />
-                        Directions
-                      </Button>
-                    </div>
+        {mapError ? (
+          <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+            <div className="text-center p-8">
+              <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">Map Temporarily Unavailable</h3>
+              <p className="text-gray-500 mb-4">We're having trouble loading the map. Please try refreshing the page.</p>
+              <Button 
+                onClick={() => {
+                  setMapError(false);
+                  window.location.reload();
+                }}
+                variant="outline"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </div>
+        ) : typeof window !== 'undefined' ? (
+          <MapContainer
+            center={mapCenter}
+            zoom={zoom}
+            style={{ height: '100%', width: '100%' }}
+            ref={mapRef}
+            key={`map-${mapCenter[0]}-${mapCenter[1]}`}
+            whenCreated={() => setMapError(false)}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            
+            <MapUpdater center={mapCenter} zoom={zoom} />
+            
+            {/* User location marker */}
+            {userLocation && (
+              <Marker position={userLocation} icon={createCustomIcon('#3b82f6')}>
+                <Popup>
+                  <div className="text-center">
+                    <p className="font-semibold">Your Location</p>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+                </Popup>
+              </Marker>
+            )}
+
+            {/* Station markers */}
+            {filteredStations.map((station) => {
+              const lat = station.coordinates?.latitude || station.latitude;
+              const lng = station.coordinates?.longitude || station.longitude;
+              
+              if (!lat || !lng) return null;
+              
+              return (
+                <Marker
+                  key={station._id || station.id}
+                  position={[lat, lng]}
+                  icon={getStationIcon(station)}
+                  eventHandlers={{
+                    click: () => handleStationClick(station)
+                  }}
+                >
+                  <Popup>
+                    <div className="min-w-[250px]">
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between">
+                          <h3 className="font-semibold text-lg">{station.name || station.stationName}</h3>
+                          <Badge className={`${
+                            station.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {station.isAvailable ? 'Available' : 'Occupied'}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {station.address}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-blue-500" />
+                            <span>{station.chargingSpeedKw}kW</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold">${station.pricePerKwh}/kWh</span>
+                          </div>
+                        </div>
+
+                        {station.operatingHours && (
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <Clock className="w-3 h-3" />
+                            <span>{station.operatingHours}</span>
+                          </div>
+                        )}
+
+                        {station.rating && (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                            <span>{station.rating.average?.toFixed(1) || 'N/A'}</span>
+                            <span className="text-gray-500">({station.rating.count || 0} reviews)</span>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleStationClick(station)}
+                          >
+                            View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                            onClick={() => {
+                              window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+                            }}
+                          >
+                            <Navigation className="w-3 h-3" />
+                            Directions
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+            <div className="text-center p-8">
+              <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Loading map...</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
@@ -321,5 +397,6 @@ export default function InteractiveMap({
         </div>
       </div>
     </div>
+    </MapErrorBoundary>
   );
 }
