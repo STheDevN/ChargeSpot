@@ -7,7 +7,7 @@ import { Input } from '../ui/input.jsx';
 import { Card, CardContent } from '../ui/card.jsx';
 import { Badge } from '../ui/badge.jsx';
 import { Image } from '../ui/image.jsx'; // Assuming this component exists
-import LiveStationsMap from '../ui/live-stations-map.jsx';
+import InteractiveMap from '../ui/interactive-map.jsx';
 import DebugMap from '../ui/debug-map.jsx';
 import NearbyStationsList from '../ui/nearby-stations-list.jsx';
 import {
@@ -145,7 +145,7 @@ export default function HomePage() {
                   ✅ <strong>Live Mode:</strong> Loading demo + live stations from APIs
                 </p>
               </div>
-              <LiveStationsMap
+              <InteractiveMap
                 height="450px"
                 showSearch={true}
                 onStationSelect={(station) => {
